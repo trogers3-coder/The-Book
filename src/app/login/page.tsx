@@ -16,6 +16,19 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </div>
         <input type="hidden" name="next" value={next} />
         <div className="space-y-1">
+          <label htmlFor="email" className="text-sm text-neutral-300">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoFocus
+            required
+            className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 outline-none focus:border-neutral-400"
+          />
+        </div>
+        <div className="space-y-1">
           <label htmlFor="password" className="text-sm text-neutral-300">
             Password
           </label>
@@ -23,12 +36,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             id="password"
             name="password"
             type="password"
-            autoFocus
             required
             className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 outline-none focus:border-neutral-400"
           />
         </div>
-        {hasError && <p className="text-sm text-red-400">Wrong password. Try again.</p>}
+        {hasError && <p className="text-sm text-red-400">Wrong email or password. Try again.</p>}
         <button
           type="submit"
           className="w-full rounded-md bg-neutral-100 px-3 py-2 font-medium text-neutral-900 hover:bg-white"

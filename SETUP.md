@@ -18,8 +18,9 @@ one-time setup in Google Cloud and Supabase.
   and extracts structured fields (date, client, rate, location, contacts,
   etc.) via structured outputs. PDFs and images are sent to Claude directly
   (native document/vision support), so scanned call sheets work too.
-- A single shared password gates the whole app (`APP_PASSWORD`) — this is a
-  personal tool for one person's two inboxes, not a multi-tenant product.
+- **Supabase Auth** gates sign-in to the app itself. There's a single user
+  (you) — this is a personal tool for one person's two inboxes, not a
+  multi-tenant product, so there's no public sign-up.
 
 ## 1. Google Cloud: OAuth client for Gmail
 
@@ -40,30 +41,45 @@ one-time setup in Google Cloud and Supabase.
      - `https://<your-deployed-domain>/api/auth/google/callback`
    - Save. Copy the **Client ID** and **Client Secret**.
 
-## 2. Environment variables
+## 2. Supabase Auth: create your account
+
+The app itself is gated by a real Supabase Auth user rather than a shared
+password. Create yours once:
+
+1. Supabase dashboard → **Authentication → Users → Add user → Create new user**.
+2. Enter your email and a password. Check **Auto Confirm User** (there's no
+   email flow wired up, so an unconfirmed user can't sign in).
+
+That's the account you'll sign in with at `/login`.
+
+## 3. Environment variables
 
 Copy `.env.example` to `.env.local` and fill in:
 
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — from step 1.
 - `GOOGLE_REDIRECT_URI` — `http://localhost:3000/api/auth/google/callback` for local dev.
-- `SUPABASE_URL` — already filled in for project `mfazietajkocomqkjzsg`.
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — already
+  filled in for project `mfazietajkocomqkjzsg` (these are public/publishable,
+  safe to expose to the browser — that's what "anon" means here).
+- `SUPABASE_URL` — already filled in, same project.
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase dashboard → Project Settings → API →
-  `service_role` key (**not** the anon/publishable key — this app relies on
-  the service role since every table has RLS enabled with no policies).
+  `service_role` key (**not** the anon key — all of the app's own data access
+  relies on the service role since every table has RLS enabled with no
+  policies; the anon key is only used for the Auth sign-in flow).
 - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com/).
-- `APP_PASSWORD`, `APP_SESSION_SECRET`, `TOKEN_ENCRYPTION_KEY`, `CRON_SECRET` —
-  generate random values, e.g. `openssl rand -base64 32` for each.
+- `TOKEN_ENCRYPTION_KEY`, `CRON_SECRET` — generate random values, e.g.
+  `openssl rand -base64 32` for each.
 
-## 3. Run it locally
+## 4. Run it locally
 
 ```bash
 npm install   # already done if you're continuing from this session
 npm run dev
 ```
 
-Open `http://localhost:3000`, sign in with `APP_PASSWORD`.
+Open `http://localhost:3000`, sign in with the email/password from step 2.
 
-## 4. Connect both inboxes
+## 5. Connect both inboxes
 
 Go to **Accounts** in the nav → **Connect Gmail** → sign in with the first
 Gmail account and grant read-only access → you'll land back on Accounts
@@ -73,7 +89,7 @@ If Google shows "This app isn't verified": that's expected while the OAuth
 consent screen is in Testing status — click **Advanced → Go to The Book
 (unsafe)**. It's your own app talking to your own Google Cloud project.
 
-## 5. Run a sync
+## 6. Run a sync
 
 Click **Sync now** next to a connected account. Each run processes up to
 `SYNC_MESSAGE_LIMIT` (default 25) new messages so it stays within request
@@ -82,13 +98,15 @@ time limits — for a first sync with years of history, click it repeatedly
 are left to process. Extracted call sheets show up on the **Archive** page
 immediately, searchable by client, brand, role, location, etc.
 
-## 6. Deploy (Vercel)
+## 7. Deploy (Vercel)
 
 1. Import this repo into Vercel.
 2. Add every variable from `.env.local` as a Vercel **Environment Variable**
    (Production + Preview as needed). Update `GOOGLE_REDIRECT_URI` to your
    real domain, and add that same URL to the Google OAuth client's
-   authorized redirect URIs (step 1).
+   authorized redirect URIs (step 1). `NEXT_PUBLIC_*` variables get baked
+   into the client bundle at build time — Vercel handles that automatically
+   as long as they're set before you deploy.
 3. `vercel.json` already defines a cron job hitting `/api/cron/sync` every
    6 hours. Vercel automatically sends `Authorization: Bearer $CRON_SECRET`
    on requests to your Cron Jobs when a `CRON_SECRET` environment variable
