@@ -107,8 +107,8 @@ immediately, searchable by client, brand, role, location, etc.
    authorized redirect URIs (step 1). `NEXT_PUBLIC_*` variables get baked
    into the client bundle at build time — Vercel handles that automatically
    as long as they're set before you deploy.
-3. `vercel.json` already defines a cron job hitting `/api/cron/sync` every
-   6 hours. Vercel automatically sends `Authorization: Bearer $CRON_SECRET`
+3. `vercel.json` already defines a cron job hitting `/api/cron/sync` once
+   daily at 6am UTC. Vercel automatically sends `Authorization: Bearer $CRON_SECRET`
    on requests to your Cron Jobs when a `CRON_SECRET` environment variable
    is set on the project — just make sure it's set. (If you deploy
    somewhere else, point any scheduler at `GET /api/cron/sync` with header
